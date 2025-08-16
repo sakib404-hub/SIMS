@@ -1,0 +1,73 @@
+<?php
+// Database connection settings
+$servername = "localhost";   // change if different
+$username   = "root";        // your MySQL username
+$password   = "";            // your MySQL password
+$dbname     = "student_information_msdb"; // database from project2
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// If you want to test connection, uncomment this:
+// echo "Connected successfully";
+?>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIMS - Login</title>
+    <link rel="stylesheet" href="Styles/style.css" />
+    <link rel="icon" type="image/x-icon" href="photos/logo.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 via-gray-100 to-blue-100 font-sans min-h-screen flex flex-col"
+  >
+    <!-- Header -->
+    <header
+      class="w-full bg-blue-700 text-white py-5 shadow-lg text-center text-xl font-semibold"
+    >
+      🎓 Student Information Management System
+    </header>
+
+    <!-- Main Content -->
+    <main
+      class="flex-1 flex flex-col items-center justify-center text-center px-6"
+    >
+      <div
+        class="container bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-lg max-w-md w-full"
+      >
+        <h1 class="text-2xl font-bold text-blue-700 mb-6">
+          Student Information System
+        </h1>
+        <div class="flex flex-col gap-4">
+          <button
+            onclick="location.href='student_login.php'"
+            class="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Student Login
+          </button>
+          <button
+            onclick="location.href='admin_login.php'"
+            class="bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition"
+          >
+            Admin Login
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer
+      class="w-full bg-blue-700 text-white text-center py-3 text-sm shadow-inner"
+    >
+      © 2025 SIMS
+    </footer>
+  </body>
+</html>
