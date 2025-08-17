@@ -100,26 +100,33 @@ if (isset($_POST['add_course'])) {
     $stmt->close();
 }
 
-// Handle Search Student
+// Handle Search Student (ROLL ONLY)
 if (isset($_POST['search_student'])) {
-    if (!empty($_POST['student_id'])) {
-        $stmt = $conn->prepare("CALL SearchStudentById(?)");
-        $stmt->bind_param("i", $_POST['student_id']);
-    } else {
+    $roll = trim($_POST['roll_number']);
+
+    if (!empty($roll)) {
         $stmt = $conn->prepare("CALL SearchStudentByRoll(?)");
-        $stmt->bind_param("s", $_POST['roll_number']);
-    }
-    if ($stmt->execute()) {
-        $result_data = $stmt->get_result();
+        $stmt->bind_param("s", $roll);
+
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            $result_data = $result->fetch_all(MYSQLI_ASSOC);
+            if (empty($result_data)) {
+                $message = "⚠️ No student found with roll number: $roll";
+            }
+        } else {
+            $message = "❌ Error: " . $stmt->error;
+        }
+        $stmt->close();
     } else {
-        $message = "❌ Error: " . $stmt->error;
+        $message = "⚠️ Please enter a roll number.";
     }
-    $stmt->close();
 }
 
 // Handle Show Students
 if (isset($_POST['view_students'])) {
-    $result_data = $conn->query("SELECT * FROM view_students_with_department");
+    $result = $conn->query("SELECT * FROM view_students_with_department");
+    $result_data = $result->fetch_all(MYSQLI_ASSOC);
 }
 
 // Handle View Grades
@@ -127,7 +134,8 @@ if (isset($_POST['view_grades'])) {
     $stmt = $conn->prepare("CALL GetStudentGrades(?)");
     $stmt->bind_param("s", $_POST['roll_number']);
     if ($stmt->execute()) {
-        $result_data = $stmt->get_result();
+        $result = $stmt->get_result();
+        $result_data = $result->fetch_all(MYSQLI_ASSOC);
     } else {
         $message = "❌ Error: " . $stmt->error;
     }
@@ -136,7 +144,8 @@ if (isset($_POST['view_grades'])) {
 
 // Handle View Courses
 if (isset($_POST['view_courses'])) {
-    $result_data = $conn->query("SELECT * FROM courses");
+    $result = $conn->query("SELECT * FROM courses");
+    $result_data = $result->fetch_all(MYSQLI_ASSOC);
 }
 ?>
 <!DOCTYPE html>
@@ -257,10 +266,9 @@ document.addEventListener("DOMContentLoaded", () => {
     <!-- Search Student -->
     <section id="search-student">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Search Student</h2>
-      <form method="post" class="space-y-2">
-        <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full">
-        <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full">
-        <button type="submit" name="search_student" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
+       <form method="post" class="space-y-2">
+         <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
+         <button type="submit" name="search_student" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
       </form>
     </section>
 
@@ -290,24 +298,24 @@ document.addEventListener("DOMContentLoaded", () => {
     </section>
 
     <!-- Results Table -->
-    <?php if ($result_data && $result_data->num_rows > 0): ?>
+    <?php if (!empty($result_data)): ?>
       <div class="overflow-x-auto mt-6">
         <table class="min-w-full border border-gray-300 bg-white">
           <thead class="bg-gray-200">
             <tr>
-              <?php foreach(array_keys($result_data->fetch_assoc()) as $col): ?>
+              <?php foreach(array_keys($result_data[0]) as $col): ?>
                 <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
-              <?php endforeach; $result_data->data_seek(0); ?>
+              <?php endforeach; ?>
             </tr>
           </thead>
           <tbody>
-            <?php while ($row = $result_data->fetch_assoc()): ?>
+            <?php foreach($result_data as $row): ?>
               <tr>
                 <?php foreach ($row as $cell): ?>
                   <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
                 <?php endforeach; ?>
               </tr>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
           </tbody>
         </table>
       </div>

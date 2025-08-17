@@ -10,8 +10,10 @@ if ($conn->connect_error) {
     die("❌ Connection failed: " . $conn->connect_error);
 }
 
-$message = ""; // feedback message
-$result_data = null; // for displaying query results
+// Separate messages & result sets for each section
+$msg_add_student = $msg_delete_student = $msg_update_student = "";
+$msg_add_grade = $msg_add_course = $msg_search = "";
+$data_search = $data_students = $data_grades = $data_courses = null;
 
 // Handle Add Student
 if (isset($_POST['add_student'])) {
@@ -27,23 +29,26 @@ if (isset($_POST['add_student'])) {
         $_POST['department_id']
     );
     if ($stmt->execute()) {
-        $message = "✅ Student added successfully!";
+        $msg_add_student = "✅ Student added successfully!";
     } else {
-        $message = "❌ Error: " . $stmt->error;
+        $msg_add_student = "❌ Error: " . $stmt->error;
     }
     $stmt->close();
 }
 
 // Handle Delete Student
 if (isset($_POST['delete_student'])) {
-    $stmt = $conn->prepare("CALL DeleteStudent(?)");
-    $stmt->bind_param("i", $_POST['student_id']);
-    if ($stmt->execute()) {
-        $message = "✅ Student deleted successfully!";
-    } else {
-        $message = "❌ Error: " . $stmt->error;
+    try {
+        $stmt = $conn->prepare("CALL DeleteStudent(?)");
+        $stmt->bind_param("i", $_POST['student_id']);
+        if ($stmt->execute()) {
+            $msg_delete_student = "✅ Student deleted successfully!";
+        }
+        $stmt->close();
+    } catch (mysqli_sql_exception $e) {
+        // Catch MySQL SIGNAL errors or constraint errors
+        $msg_delete_student = "⚠️ Cannot delete student: " . $e->getMessage();
     }
-    $stmt->close();
 }
 
 // Handle Update Student
@@ -60,9 +65,9 @@ if (isset($_POST['update_student'])) {
         $_POST['department_id']
     );
     if ($stmt->execute()) {
-        $message = "✅ Student updated successfully!";
+        $msg_update_student = "✅ Student updated successfully!";
     } else {
-        $message = "❌ Error: " . $stmt->error;
+        $msg_update_student = "❌ Error: " . $stmt->error;
     }
     $stmt->close();
 }
@@ -77,9 +82,9 @@ if (isset($_POST['add_grade'])) {
         $_POST['grade']
     );
     if ($stmt->execute()) {
-        $message = "✅ Grade added successfully!";
+        $msg_add_grade = "✅ Grade added successfully!";
     } else {
-        $message = "❌ Error: " . $stmt->error;
+        $msg_add_grade = "❌ Error: " . $stmt->error;
     }
     $stmt->close();
 }
@@ -93,33 +98,38 @@ if (isset($_POST['add_course'])) {
         $_POST['department_id']
     );
     if ($stmt->execute()) {
-        $message = "✅ Course added successfully!";
+        $msg_add_course = "✅ Course added successfully!";
     } else {
-        $message = "❌ Error: " . $stmt->error;
+        $msg_add_course = "❌ Error: " . $stmt->error;
     }
     $stmt->close();
 }
 
-// Handle Search Student
+// Handle Search Student (ROLL ONLY)
 if (isset($_POST['search_student'])) {
-    if (!empty($_POST['student_id'])) {
-        $stmt = $conn->prepare("CALL SearchStudentById(?)");
-        $stmt->bind_param("i", $_POST['student_id']);
-    } else {
+    $roll = trim($_POST['roll_number']);
+    if (!empty($roll)) {
         $stmt = $conn->prepare("CALL SearchStudentByRoll(?)");
-        $stmt->bind_param("s", $_POST['roll_number']);
-    }
-    if ($stmt->execute()) {
-        $result_data = $stmt->get_result();
+        $stmt->bind_param("s", $roll);
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            $data_search = $result->fetch_all(MYSQLI_ASSOC);
+            if (empty($data_search)) {
+                $msg_search = "⚠️ No student found with roll number: $roll";
+            }
+        } else {
+            $msg_search = "❌ Error: " . $stmt->error;
+        }
+        $stmt->close();
     } else {
-        $message = "❌ Error: " . $stmt->error;
+        $msg_search = "⚠️ Please enter a roll number.";
     }
-    $stmt->close();
 }
 
 // Handle Show Students
 if (isset($_POST['view_students'])) {
-    $result_data = $conn->query("SELECT * FROM view_students_with_department");
+    $result = $conn->query("SELECT * FROM view_students_with_department");
+    $data_students = $result->fetch_all(MYSQLI_ASSOC);
 }
 
 // Handle View Grades
@@ -127,16 +137,18 @@ if (isset($_POST['view_grades'])) {
     $stmt = $conn->prepare("CALL GetStudentGrades(?)");
     $stmt->bind_param("s", $_POST['roll_number']);
     if ($stmt->execute()) {
-        $result_data = $stmt->get_result();
+        $result = $stmt->get_result();
+        $data_grades = $result->fetch_all(MYSQLI_ASSOC);
     } else {
-        $message = "❌ Error: " . $stmt->error;
+        $msg_search = "❌ Error: " . $stmt->error;
     }
     $stmt->close();
 }
 
 // Handle View Courses
 if (isset($_POST['view_courses'])) {
-    $result_data = $conn->query("SELECT * FROM courses");
+    $result = $conn->query("SELECT * FROM courses");
+    $data_courses = $result->fetch_all(MYSQLI_ASSOC);
 }
 ?>
 <!DOCTYPE html>
@@ -163,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <!-- Header -->
 <header class="bg-blue-700 text-white py-4 px-6 flex justify-between items-center shadow-md">
   <h1 class="text-lg font-semibold">🛠️ SIMS - Admin Dashboard</h1>
-  <a href="index.html" class="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 transition">Logout</a>
+  <a href="index.php" class="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 transition">Logout</a>
 </header>
 
 <div class="flex flex-1">
@@ -184,14 +196,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   <!-- Main Content -->
   <main class="flex-1 p-6 space-y-12">
-    <?php if ($message): ?>
-      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4">
-        <?= htmlspecialchars($message) ?>
-      </div>
-    <?php endif; ?>
 
     <!-- Add Student -->
-    <section id="add-student">
+    <section id="add-student" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Add Student</h2>
       <form method="post" class="space-y-2">
         <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
@@ -204,19 +211,29 @@ document.addEventListener("DOMContentLoaded", () => {
         <input name="department_id" placeholder="Department ID" type="number" class="p-2 border rounded w-full" required>
         <button type="submit" name="add_student" class="bg-blue-500 text-white px-4 py-2 rounded">Add</button>
       </form>
+      <?php if ($msg_add_student): ?>
+        <p class="mt-2 text-sm text-yellow-700"><?= htmlspecialchars($msg_add_student) ?></p>
+      <?php endif; ?>
     </section>
 
     <!-- Delete Student -->
-    <section id="delete-student">
-      <h2 class="text-2xl font-bold text-blue-700 mb-4">Delete Student</h2>
-      <form method="post" class="space-y-2">
-        <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
-        <button type="submit" name="delete_student" class="bg-red-500 text-white px-4 py-2 rounded">Delete</button>
-      </form>
-    </section>
+<section id="delete-student" class="section-content">
+  <h2 class="text-2xl font-bold text-blue-700 mb-4">Delete Student</h2>
+  <form method="post" class="space-y-2">
+    <input type="hidden" name="current_section" value="delete-student">
+    <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
+    <button type="submit" name="delete_student" class="bg-red-500 text-white px-4 py-2 rounded">Delete</button>
+  </form>
+  <?php if ($msg_delete_student): ?>
+    <div class="mt-2 text-sm <?= str_starts_with($msg_delete_student, '✅') ? 'text-green-600' : 'text-red-600' ?>">
+      <?= htmlspecialchars($msg_delete_student) ?>
+    </div>
+  <?php endif; ?>
+</section>
+
 
     <!-- Update Student -->
-    <section id="update-student">
+    <section id="update-student" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Update Student</h2>
       <form method="post" class="space-y-2">
         <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
@@ -229,10 +246,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <input name="department_id" placeholder="Department ID" type="number" class="p-2 border rounded w-full" required>
         <button type="submit" name="update_student" class="bg-green-500 text-white px-4 py-2 rounded">Update</button>
       </form>
+      <?php if ($msg_update_student): ?>
+        <p class="mt-2 text-sm text-yellow-700"><?= htmlspecialchars($msg_update_student) ?></p>
+      <?php endif; ?>
     </section>
 
     <!-- Add Grade -->
-    <section id="add-grade">
+    <section id="add-grade" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Add Grade</h2>
       <form method="post" class="space-y-2">
         <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
@@ -241,10 +261,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <input name="grade" placeholder="Grade" class="p-2 border rounded w-full" required>
         <button type="submit" name="add_grade" class="bg-blue-500 text-white px-4 py-2 rounded">Add</button>
       </form>
+      <?php if ($msg_add_grade): ?>
+        <p class="mt-2 text-sm text-yellow-700"><?= htmlspecialchars($msg_add_grade) ?></p>
+      <?php endif; ?>
     </section>
 
     <!-- Add Course -->
-    <section id="add-course">
+    <section id="add-course" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Add Course</h2>
       <form method="post" class="space-y-2">
         <input name="course_code" placeholder="Course Code" class="p-2 border rounded w-full" required>
@@ -252,71 +275,167 @@ document.addEventListener("DOMContentLoaded", () => {
         <input name="department_id" placeholder="Department ID" type="number" class="p-2 border rounded w-full" required>
         <button type="submit" name="add_course" class="bg-blue-500 text-white px-4 py-2 rounded">Add</button>
       </form>
+      <?php if ($msg_add_course): ?>
+        <p class="mt-2 text-sm text-yellow-700"><?= htmlspecialchars($msg_add_course) ?></p>
+      <?php endif; ?>
     </section>
 
     <!-- Search Student -->
-    <section id="search-student">
+    <section id="search-student" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Search Student</h2>
       <form method="post" class="space-y-2">
-        <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full">
-        <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full">
+        <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
         <button type="submit" name="search_student" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
       </form>
+      <?php if ($msg_search): ?>
+        <p class="mt-2 text-sm text-yellow-700"><?= htmlspecialchars($msg_search) ?></p>
+      <?php endif; ?>
+      <?php if ($data_search): ?>
+        <div class="overflow-x-auto mt-4">
+          <table class="min-w-full border border-gray-300 bg-white">
+            <thead class="bg-gray-200">
+              <tr>
+                <?php foreach(array_keys($data_search[0]) as $col): ?>
+                  <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
+                <?php endforeach; ?>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach($data_search as $row): ?>
+                <tr>
+                  <?php foreach ($row as $cell): ?>
+                    <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
     </section>
 
     <!-- Show Students -->
-    <section id="view-students">
+    <section id="view-students" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">All Students</h2>
       <form method="post">
         <button type="submit" name="view_students" class="bg-blue-500 text-white px-4 py-2 rounded">Show Students</button>
       </form>
+      <?php if ($data_students): ?>
+        <div class="overflow-x-auto mt-4">
+          <table class="min-w-full border border-gray-300 bg-white">
+            <thead class="bg-gray-200">
+              <tr>
+                <?php foreach(array_keys($data_students[0]) as $col): ?>
+                  <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
+                <?php endforeach; ?>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach($data_students as $row): ?>
+                <tr>
+                  <?php foreach ($row as $cell): ?>
+                    <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
     </section>
 
     <!-- View Grades -->
-    <section id="view-grades">
+    <section id="view-grades" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">View Grades</h2>
       <form method="post" class="space-y-2">
         <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
         <button type="submit" name="view_grades" class="bg-blue-500 text-white px-4 py-2 rounded">View</button>
       </form>
+      <?php if ($data_grades): ?>
+        <div class="overflow-x-auto mt-4">
+          <table class="min-w-full border border-gray-300 bg-white">
+            <thead class="bg-gray-200">
+              <tr>
+                <?php foreach(array_keys($data_grades[0]) as $col): ?>
+                  <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
+                <?php endforeach; ?>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach($data_grades as $row): ?>
+                <tr>
+                  <?php foreach ($row as $cell): ?>
+                    <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
     </section>
 
     <!-- View Courses -->
-    <section id="view-courses">
+    <section id="view-courses" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">View Courses</h2>
       <form method="post">
         <button type="submit" name="view_courses" class="bg-blue-500 text-white px-4 py-2 rounded">Show Courses</button>
       </form>
-    </section>
-
-    <!-- Results Table -->
-    <?php if ($result_data && $result_data->num_rows > 0): ?>
-      <div class="overflow-x-auto mt-6">
-        <table class="min-w-full border border-gray-300 bg-white">
-          <thead class="bg-gray-200">
-            <tr>
-              <?php foreach(array_keys($result_data->fetch_assoc()) as $col): ?>
-                <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
-              <?php endforeach; $result_data->data_seek(0); ?>
-            </tr>
-          </thead>
-          <tbody>
-            <?php while ($row = $result_data->fetch_assoc()): ?>
+      <?php if ($data_courses): ?>
+        <div class="overflow-x-auto mt-4">
+          <table class="min-w-full border border-gray-300 bg-white">
+            <thead class="bg-gray-200">
               <tr>
-                <?php foreach ($row as $cell): ?>
-                  <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
+                <?php foreach(array_keys($data_courses[0]) as $col): ?>
+                  <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
                 <?php endforeach; ?>
               </tr>
-            <?php endwhile; ?>
-          </tbody>
-        </table>
-      </div>
-    <?php endif; ?>
+            </thead>
+            <tbody>
+              <?php foreach($data_courses as $row): ?>
+                <tr>
+                  <?php foreach ($row as $cell): ?>
+                    <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    </section>
+
   </main>
 </div>
 
 <footer class="bg-blue-700 text-white text-center py-3 text-sm shadow-inner">
   © 2025 SIMS
 </footer>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const sections = document.querySelectorAll("section");
+  const links = document.querySelectorAll("aside nav a");
+
+  // Hide all except first by default
+  sections.forEach((sec, idx) => {
+    if (idx !== 0) sec.classList.add("hidden");
+  });
+
+  links.forEach(link => {
+    link.addEventListener("click", e => {
+      e.preventDefault();
+      const targetId = link.getAttribute("href").substring(1);
+
+      // Hide all sections
+      sections.forEach(sec => sec.classList.add("hidden"));
+
+      // Show clicked section
+      const targetSection = document.getElementById(targetId);
+      if (targetSection) targetSection.classList.remove("hidden");
+    });
+  });
+});
+</script>
+
 </body>
 </html>
