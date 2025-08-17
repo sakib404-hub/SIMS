@@ -20,6 +20,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["current_section"])) {
 $msg_add_student = $msg_delete_student = $msg_update_student = "";
 $msg_add_grade = $msg_add_course = $msg_search = "";
 $data_search = $data_students = $data_grades = $data_courses = null;
+$msg_dept_search = "";
+$data_dept_students = null;
 
 // Handle Add Student
 if (isset($_POST['add_student'])) {
@@ -41,20 +43,39 @@ if (isset($_POST['add_student'])) {
     }
     $stmt->close();
 }
-
 // Handle Delete Student
 if (isset($_POST['delete_student'])) {
     try {
         $stmt = $conn->prepare("CALL DeleteStudent(?)");
         $stmt->bind_param("i", $_POST['student_id']);
         if ($stmt->execute()) {
-            $msg_delete_student = "✅ Student deleted successfully!";
+            if ($stmt->affected_rows > 0) {
+                $msg_delete_student = "✅ Student deleted successfully!";
+            } else {
+                $msg_delete_student = "⚠️ No student found with ID: " . $_POST['student_id'];
+            }
+        } else {
+            $msg_delete_student = "❌ Error: " . $stmt->error;
         }
         $stmt->close();
     } catch (mysqli_sql_exception $e) {
         $msg_delete_student = "⚠️ Cannot delete student: " . $e->getMessage();
     }
 }
+
+// Handle Preview Student Before Delete
+$delete_preview = null;
+if (isset($_POST['preview_delete'])) {
+    $id = intval($_POST['student_id']);
+    $stmt = $conn->prepare("CALL SearchStudentById(?)");
+    $stmt->bind_param("i", $id);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        $delete_preview = $result->fetch_assoc();
+    }
+    $stmt->close();
+}
+
 
 // Handle Update Student
 if (isset($_POST['update_student'])) {
@@ -130,6 +151,27 @@ if (isset($_POST['search_student'])) {
         $msg_search = "⚠️ Please enter a roll number.";
     }
 }
+// Handle Preview Student Before Delete
+$delete_preview = null;
+if (isset($_POST['preview_delete'])) {
+    $id = intval($_POST['student_id']);
+    $stmt = $conn->prepare("CALL SearchStudentById(?)");
+    $stmt->bind_param("i", $id);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        $delete_preview = $result->fetch_assoc();
+        if ($delete_preview) {
+            $msg_delete_student = "✅ Student found! Please confirm deletion.";
+        } else {
+            $msg_delete_student = "⚠️ No student found with ID: " . $id;
+        }
+    } else {
+        $msg_delete_student = "❌ Error: " . $stmt->error;
+    }
+    $stmt->close();
+}
+
+
 
 // Handle Show Students
 if (isset($_POST['view_students'])) {
@@ -155,6 +197,31 @@ if (isset($_POST['view_courses'])) {
     $result = $conn->query("SELECT * FROM courses");
     $data_courses = $result->fetch_all(MYSQLI_ASSOC);
 }
+// Fetch all departments for dropdown
+$departments = [];
+$result = $conn->query("SELECT department_name FROM departments ORDER BY department_name");
+if ($result) {
+    $departments = $result->fetch_all(MYSQLI_ASSOC);
+}
+// Handle Search by Department
+if (isset($_POST['search_by_department'])) {
+    $dept_name = $_POST['department_name'];
+    $stmt = $conn->prepare("SELECT * FROM view_students_with_department WHERE department_name = ?");
+    $stmt->bind_param("s", $dept_name);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        $data_dept_students = $result->fetch_all(MYSQLI_ASSOC);
+        if (empty($data_dept_students)) {
+            $msg_dept_search = "⚠️ No students found in department: $dept_name";
+        } else {
+            $msg_dept_search = "✅ Found " . count($data_dept_students) . " student(s) in $dept_name.";
+        }
+    } else {
+        $msg_dept_search = "❌ Error: " . $stmt->error;
+    }
+    $stmt->close();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -183,6 +250,7 @@ if (isset($_POST['view_courses'])) {
       <a href="#view-students" class="px-3 py-2 rounded-lg hover:bg-blue-600">Show Students</a>
       <a href="#view-grades" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Grades</a>
       <a href="#view-courses" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Courses</a>
+    <a href="#search-department" class="px-3 py-2 rounded-lg hover:bg-blue-600">Search by Department</a>
     </nav>
     <!-- Logout button -->
     <div class="p-4">
@@ -213,20 +281,46 @@ if (isset($_POST['view_courses'])) {
       <?php endif; ?>
     </section>
 
-    <!-- Delete Student -->
-    <section id="delete-student" class="section-content">
-      <h2 class="text-2xl font-bold text-blue-700 mb-4">Delete Student</h2>
-      <form method="post" class="space-y-2">
+<!-- Delete Student -->
+<section id="delete-student" class="section-content">
+  <h2 class="text-2xl font-bold text-blue-700 mb-4">Delete Student</h2>
+  
+  <!-- Step 1: Search student by ID -->
+  <form method="post" class="space-y-2 mb-4">
+    <input type="hidden" name="current_section" value="delete-student">
+    <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
+    <button type="submit" name="preview_delete" class="bg-yellow-500 text-white px-4 py-2 rounded">
+      Preview Student
+    </button>
+  </form>
+
+  <?php if ($msg_delete_student): ?>
+    <div class="mt-2 text-sm 
+         <?= str_starts_with($msg_delete_student, '✅') ? 'text-green-600' : 'text-red-600' ?>">
+      <?= htmlspecialchars($msg_delete_student) ?>
+    </div>
+  <?php endif; ?>
+
+  <?php if ($delete_preview): ?>
+    <div class="p-4 border rounded bg-white shadow mt-3">
+      <p><strong>ID:</strong> <?= htmlspecialchars($delete_preview['student_id']) ?></p>
+      <p><strong>Roll:</strong> <?= htmlspecialchars($delete_preview['roll_number']) ?></p>
+      <p><strong>Name:</strong> <?= htmlspecialchars($delete_preview['first_name'] . " " . $delete_preview['last_name']) ?></p>
+      <p><strong>Department:</strong> <?= htmlspecialchars($delete_preview['department_name']) ?></p>
+      
+      <!-- Confirm Delete -->
+      <form method="post" class="mt-3">
         <input type="hidden" name="current_section" value="delete-student">
-        <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
-        <button type="submit" name="delete_student" class="bg-red-500 text-white px-4 py-2 rounded">Delete</button>
+        <input type="hidden" name="student_id" value="<?= htmlspecialchars($delete_preview['student_id']) ?>">
+        <button type="submit" name="delete_student" class="bg-red-600 text-white px-4 py-2 rounded">
+          Confirm Delete
+        </button>
       </form>
-      <?php if ($msg_delete_student): ?>
-        <div class="mt-2 text-sm <?= str_starts_with($msg_delete_student, '✅') ? 'text-green-600' : 'text-red-600' ?>">
-          <?= htmlspecialchars($msg_delete_student) ?>
-        </div>
-      <?php endif; ?>
-    </section>
+    </div>
+  <?php endif; ?>
+</section>
+
+
 
     <!-- Update Student -->
     <section id="update-student" class="section-content">
@@ -407,10 +501,57 @@ if (isset($_POST['view_courses'])) {
         </div>
       <?php endif; ?>
     </section>
+<!-- Search Students by Department -->
+<section id="search-department" class="section-content">
+  <h2 class="text-2xl font-bold text-blue-700 mb-4">Search Students by Department</h2>
+  <form method="post" class="space-y-2">
+    <input type="hidden" name="current_section" value="search-department">
+    
+    <select name="department_name" class="p-2 border rounded w-full" required>
+  <option value="">-- Select Department --</option>
+  <?php foreach ($departments as $dept): ?>
+    <option value="<?= htmlspecialchars($dept['department_name']) ?>">
+      <?= htmlspecialchars($dept['department_name']) ?>
+    </option>
+  <?php endforeach; ?>
+</select>
+    
+    <button type="submit" name="search_by_department" class="bg-blue-500 text-white px-4 py-2 rounded">
+      Search
+    </button>
+  </form>
+
+  <?php if ($msg_dept_search): ?>
+    <p class="mt-2 text-sm text-yellow-700"><?= htmlspecialchars($msg_dept_search) ?></p>
+  <?php endif; ?>
+
+  <?php if ($data_dept_students): ?>
+    <div class="overflow-x-auto mt-4">
+      <table class="min-w-full border border-gray-300 bg-white">
+        <thead class="bg-gray-200">
+          <tr>
+            <?php foreach(array_keys($data_dept_students[0]) as $col): ?>
+              <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
+            <?php endforeach; ?>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach($data_dept_students as $row): ?>
+            <tr>
+              <?php foreach ($row as $cell): ?>
+                <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
+              <?php endforeach; ?>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+</section>
+
 
   </main>
 </div>
-
 <footer class="bg-blue-700 text-white text-center py-3 text-sm shadow-inner">
   © 2025 SIMS
 </footer>
