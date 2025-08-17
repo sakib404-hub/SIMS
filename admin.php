@@ -175,24 +175,28 @@ document.addEventListener("DOMContentLoaded", () => {
 <!-- Header -->
 <header class="bg-blue-700 text-white py-4 px-6 flex justify-between items-center shadow-md">
   <h1 class="text-lg font-semibold">🛠️ SIMS - Admin Dashboard</h1>
-  <a href="index.php" class="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 transition">Logout</a>
 </header>
 
 <div class="flex flex-1">
   <!-- Sidebar -->
-  <aside class="bg-blue-800 text-white w-64 flex-shrink-0 shadow-lg">
-    <nav class="flex flex-col p-4 gap-2">
-      <a href="#add-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Student</a>
-      <a href="#delete-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Delete Student</a>
-      <a href="#update-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Update Student</a>
-      <a href="#add-grade" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Grade</a>
-      <a href="#add-course" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Course</a>
-      <a href="#search-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Search Student</a>
-      <a href="#view-students" class="px-3 py-2 rounded-lg hover:bg-blue-600">Show Students</a>
-      <a href="#view-grades" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Grades</a>
-      <a href="#view-courses" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Courses</a>
-    </nav>
-  </aside>
+ <!-- Sidebar -->
+<aside class="bg-blue-800 text-white w-64 flex-shrink-0 shadow-lg flex flex-col justify-between">
+  <nav class="flex flex-col p-4 gap-2">
+    <a href="#add-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Student</a>
+    <a href="#delete-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Delete Student</a>
+    <a href="#update-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Update Student</a>
+    <a href="#add-grade" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Grade</a>
+    <a href="#add-course" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Course</a>
+    <a href="#search-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Search Student</a>
+    <a href="#view-students" class="px-3 py-2 rounded-lg hover:bg-blue-600">Show Students</a>
+    <a href="#view-grades" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Grades</a>
+    <a href="#view-courses" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Courses</a>
+  </nav>
+  <!-- Logout button at bottom -->
+  <div class="p-4">
+    <a href="index.php" class="block bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 text-center">Logout</a>
+  </div>
+</aside>
 
   <!-- Main Content -->
   <main class="flex-1 p-6 space-y-12">
@@ -425,7 +429,6 @@ document.addEventListener("DOMContentLoaded", () => {
     link.addEventListener("click", e => {
       e.preventDefault();
       const targetId = link.getAttribute("href").substring(1);
-
       // Hide all sections
       sections.forEach(sec => sec.classList.add("hidden"));
 
