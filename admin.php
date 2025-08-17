@@ -10,6 +10,12 @@ if ($conn->connect_error) {
     die("❌ Connection failed: " . $conn->connect_error);
 }
 
+// Track active section (default: add-student)
+$current_section = "add-student";
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["current_section"])) {
+    $current_section = $_POST["current_section"];
+}
+
 // Separate messages & result sets for each section
 $msg_add_student = $msg_delete_student = $msg_update_student = "";
 $msg_add_grade = $msg_add_course = $msg_search = "";
@@ -46,7 +52,6 @@ if (isset($_POST['delete_student'])) {
         }
         $stmt->close();
     } catch (mysqli_sql_exception $e) {
-        // Catch MySQL SIGNAL errors or constraint errors
         $msg_delete_student = "⚠️ Cannot delete student: " . $e->getMessage();
     }
 }
@@ -105,7 +110,7 @@ if (isset($_POST['add_course'])) {
     $stmt->close();
 }
 
-// Handle Search Student (ROLL ONLY)
+// Handle Search Student
 if (isset($_POST['search_student'])) {
     $roll = trim($_POST['roll_number']);
     if (!empty($roll)) {
@@ -157,46 +162,33 @@ if (isset($_POST['view_courses'])) {
 <meta charset="UTF-8">
 <title>Admin Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-// Smooth scroll
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener("click", function(e) {
-      e.preventDefault();
-      document.querySelector(this.getAttribute("href")).scrollIntoView({
-        behavior: "smooth"
-      });
-    });
-  });
-});
-</script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+
 <!-- Header -->
-<header class="bg-blue-700 text-white py-4 px-6 flex justify-between items-center shadow-md">
+<header class="bg-blue-700 text-white py-4 px-6 shadow-md text-center">
   <h1 class="text-lg font-semibold">🛠️ SIMS - Admin Dashboard</h1>
 </header>
 
 <div class="flex flex-1">
   <!-- Sidebar -->
- <!-- Sidebar -->
-<aside class="bg-blue-800 text-white w-64 flex-shrink-0 shadow-lg flex flex-col justify-between">
-  <nav class="flex flex-col p-4 gap-2">
-    <a href="#add-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Student</a>
-    <a href="#delete-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Delete Student</a>
-    <a href="#update-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Update Student</a>
-    <a href="#add-grade" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Grade</a>
-    <a href="#add-course" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Course</a>
-    <a href="#search-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Search Student</a>
-    <a href="#view-students" class="px-3 py-2 rounded-lg hover:bg-blue-600">Show Students</a>
-    <a href="#view-grades" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Grades</a>
-    <a href="#view-courses" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Courses</a>
-  </nav>
-  <!-- Logout button at bottom -->
-  <div class="p-4">
-    <a href="index.php" class="block bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 text-center">Logout</a>
-  </div>
-</aside>
+  <aside class="bg-blue-800 text-white w-64 flex-shrink-0 shadow-lg flex flex-col justify-between">
+    <nav class="flex flex-col p-4 gap-2">
+      <a href="#add-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Student</a>
+      <a href="#delete-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Delete Student</a>
+      <a href="#update-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Update Student</a>
+      <a href="#add-grade" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Grade</a>
+      <a href="#add-course" class="px-3 py-2 rounded-lg hover:bg-blue-600">Add Course</a>
+      <a href="#search-student" class="px-3 py-2 rounded-lg hover:bg-blue-600">Search Student</a>
+      <a href="#view-students" class="px-3 py-2 rounded-lg hover:bg-blue-600">Show Students</a>
+      <a href="#view-grades" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Grades</a>
+      <a href="#view-courses" class="px-3 py-2 rounded-lg hover:bg-blue-600">View Courses</a>
+    </nav>
+    <!-- Logout button -->
+    <div class="p-4">
+      <a href="index.php" class="block bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 text-center">Logout</a>
+    </div>
+  </aside>
 
   <!-- Main Content -->
   <main class="flex-1 p-6 space-y-12">
@@ -205,6 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="add-student" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Add Student</h2>
       <form method="post" class="space-y-2">
+        <input type="hidden" name="current_section" value="add-student">
         <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
         <input name="first_name" placeholder="First Name" class="p-2 border rounded w-full" required>
         <input name="last_name" placeholder="Last Name" class="p-2 border rounded w-full" required>
@@ -221,25 +214,25 @@ document.addEventListener("DOMContentLoaded", () => {
     </section>
 
     <!-- Delete Student -->
-<section id="delete-student" class="section-content">
-  <h2 class="text-2xl font-bold text-blue-700 mb-4">Delete Student</h2>
-  <form method="post" class="space-y-2">
-    <input type="hidden" name="current_section" value="delete-student">
-    <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
-    <button type="submit" name="delete_student" class="bg-red-500 text-white px-4 py-2 rounded">Delete</button>
-  </form>
-  <?php if ($msg_delete_student): ?>
-    <div class="mt-2 text-sm <?= str_starts_with($msg_delete_student, '✅') ? 'text-green-600' : 'text-red-600' ?>">
-      <?= htmlspecialchars($msg_delete_student) ?>
-    </div>
-  <?php endif; ?>
-</section>
-
+    <section id="delete-student" class="section-content">
+      <h2 class="text-2xl font-bold text-blue-700 mb-4">Delete Student</h2>
+      <form method="post" class="space-y-2">
+        <input type="hidden" name="current_section" value="delete-student">
+        <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
+        <button type="submit" name="delete_student" class="bg-red-500 text-white px-4 py-2 rounded">Delete</button>
+      </form>
+      <?php if ($msg_delete_student): ?>
+        <div class="mt-2 text-sm <?= str_starts_with($msg_delete_student, '✅') ? 'text-green-600' : 'text-red-600' ?>">
+          <?= htmlspecialchars($msg_delete_student) ?>
+        </div>
+      <?php endif; ?>
+    </section>
 
     <!-- Update Student -->
     <section id="update-student" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Update Student</h2>
       <form method="post" class="space-y-2">
+        <input type="hidden" name="current_section" value="update-student">
         <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
         <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
         <input name="first_name" placeholder="First Name" class="p-2 border rounded w-full" required>
@@ -259,6 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="add-grade" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Add Grade</h2>
       <form method="post" class="space-y-2">
+        <input type="hidden" name="current_section" value="add-grade">
         <input name="student_id" placeholder="Student ID" type="number" class="p-2 border rounded w-full" required>
         <input name="course_code" placeholder="Course Code" class="p-2 border rounded w-full" required>
         <input name="semester" placeholder="Semester" class="p-2 border rounded w-full" required>
@@ -274,6 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="add-course" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Add Course</h2>
       <form method="post" class="space-y-2">
+        <input type="hidden" name="current_section" value="add-course">
         <input name="course_code" placeholder="Course Code" class="p-2 border rounded w-full" required>
         <input name="course_name" placeholder="Course Name" class="p-2 border rounded w-full" required>
         <input name="department_id" placeholder="Department ID" type="number" class="p-2 border rounded w-full" required>
@@ -288,6 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="search-student" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">Search Student</h2>
       <form method="post" class="space-y-2">
+        <input type="hidden" name="current_section" value="search-student">
         <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
         <button type="submit" name="search_student" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
       </form>
@@ -322,6 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="view-students" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">All Students</h2>
       <form method="post">
+        <input type="hidden" name="current_section" value="view-students">
         <button type="submit" name="view_students" class="bg-blue-500 text-white px-4 py-2 rounded">Show Students</button>
       </form>
       <?php if ($data_students): ?>
@@ -352,6 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="view-grades" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">View Grades</h2>
       <form method="post" class="space-y-2">
+        <input type="hidden" name="current_section" value="view-grades">
         <input name="roll_number" placeholder="Roll Number" class="p-2 border rounded w-full" required>
         <button type="submit" name="view_grades" class="bg-blue-500 text-white px-4 py-2 rounded">View</button>
       </form>
@@ -383,6 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="view-courses" class="section-content">
       <h2 class="text-2xl font-bold text-blue-700 mb-4">View Courses</h2>
       <form method="post">
+        <input type="hidden" name="current_section" value="view-courses">
         <button type="submit" name="view_courses" class="bg-blue-500 text-white px-4 py-2 rounded">Show Courses</button>
       </form>
       <?php if ($data_courses): ?>
@@ -415,26 +414,49 @@ document.addEventListener("DOMContentLoaded", () => {
 <footer class="bg-blue-700 text-white text-center py-3 text-sm shadow-inner">
   © 2025 SIMS
 </footer>
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const sections = document.querySelectorAll("section");
   const links = document.querySelectorAll("aside nav a");
+ const activeSection = "<?= $current_section ?>";
 
-  // Hide all except first by default
-  sections.forEach((sec, idx) => {
-    if (idx !== 0) sec.classList.add("hidden");
-  });
+// Hide all sections
+sections.forEach(sec => sec.classList.add("hidden"));
 
+// Show the correct one from PHP
+if (activeSection) {
+    const sec = document.getElementById(activeSection);
+    if (sec) sec.classList.remove("hidden");
+} else {
+    sections[0].classList.remove("hidden"); // fallback
+}
+
+// Highlight sidebar link
+links.forEach(link => {
+    if (link.getAttribute("href") === "#" + activeSection) {
+        link.classList.add("bg-blue-600");
+    } else {
+        link.classList.remove("bg-blue-600");
+    }
+});
+
+  // Hide all
+  sections.forEach(sec => sec.classList.add("hidden"));
+
+  // Show current
+  const targetSection = document.getElementById(activeSection);
+  if (targetSection) targetSection.classList.remove("hidden");
+  else sections[0].classList.remove("hidden");
+
+  // Sidebar clicks
   links.forEach(link => {
     link.addEventListener("click", e => {
       e.preventDefault();
       const targetId = link.getAttribute("href").substring(1);
-      // Hide all sections
       sections.forEach(sec => sec.classList.add("hidden"));
-
-      // Show clicked section
-      const targetSection = document.getElementById(targetId);
-      if (targetSection) targetSection.classList.remove("hidden");
+      const sec = document.getElementById(targetId);
+      if (sec) sec.classList.remove("hidden");
     });
   });
 });
