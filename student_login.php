@@ -43,13 +43,21 @@ $conn->close();
     <title>Student Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/x-icon" href="photos/logo.png" />
+    <style>
+      :root {
+        --dark-blue: #174B6C;
+        --medium-blue: #2471A3;
+        --light-blue: #40A9E0;
+      }
+    </style>
   </head>
   <body
-    class="bg-gradient-to-br from-blue-50 via-gray-100 to-blue-100 min-h-screen flex flex-col font-sans"
+    class="bg-gradient-to-br from-[var(--light-blue)] via-gray-100 to-[var(--medium-blue)] min-h-screen flex flex-col font-sans"
   >
     <!-- Header -->
     <header
-      class="bg-blue-700 text-white py-5 shadow-lg text-center text-xl font-semibold"
+      class="py-5 shadow-lg text-center text-xl font-semibold"
+      style="background-color: var(--dark-blue); color: white;"
     >
       🎓 Student Information Management System - Login
     </header>
@@ -59,11 +67,14 @@ $conn->close();
       <div
         class="bg-white/90 backdrop-blur-md shadow-xl rounded-xl p-8 w-full max-w-md"
       >
-        <h2 class="text-2xl font-bold text-blue-700 text-center mb-6">
+        <h2
+          class="text-2xl font-bold text-center mb-6"
+          style="color: var(--dark-blue);"
+        >
           🔐 Student Login
         </h2>
         <?php if (!empty($error)): ?>
-          <div class="mb-4 text-red-600 font-semibold text-center">
+          <div class="mb-4 font-semibold text-center" style="color: red;">
             <?= htmlspecialchars($error) ?>
           </div>
         <?php endif; ?>
@@ -71,7 +82,8 @@ $conn->close();
           <div class="mb-4">
             <label
               for="roll-number"
-              class="block text-gray-700 font-semibold mb-2"
+              class="block font-semibold mb-2"
+              style="color: #333;"
               >Roll Number</label
             >
             <input
@@ -79,19 +91,26 @@ $conn->close();
               id="roll-number"
               name="roll-number"
               required
-              class="w-full px-4 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              style="border-color: var(--light-blue);"
               placeholder="Enter your roll number (e.g. 1001)"
             />
           </div>
           <button
             type="submit"
-            class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+            class="w-full py-2 rounded-lg transition"
+            style="background-color: var(--medium-blue); color: white;"
+            onmouseover="this.style.backgroundColor='var(--dark-blue)'"
+            onmouseout="this.style.backgroundColor='var(--medium-blue)'"
           >
             Login
           </button>
         </form>
         <div class="mt-4 text-center">
-          <a href="index.php" class="text-blue-600 hover:underline text-sm"
+          <a
+            href="index.php"
+            class="text-sm hover:underline"
+            style="color: var(--medium-blue);"
             >← Back to Home</a
           >
         </div>
@@ -100,7 +119,8 @@ $conn->close();
 
     <!-- Footer -->
     <footer
-      class="bg-blue-700 text-white text-center py-3 text-sm shadow-inner"
+      class="text-center py-3 text-sm shadow-inner"
+      style="background-color: var(--dark-blue); color: white;"
     >
       © 2025 SIMS
     </footer>

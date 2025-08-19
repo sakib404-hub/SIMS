@@ -93,20 +93,24 @@ $conn->close();
     <link rel="icon" type="image/x-icon" href="photos/logo.png" />
   </head>
   <body
-    class="bg-gradient-to-br from-blue-50 via-gray-100 to-blue-100 font-sans min-h-screen flex flex-col"
+    class="bg-gradient-to-br from-[#E8F4FB] via-gray-100 to-[#D4ECFA] font-sans min-h-screen flex flex-col"
   >
     <!-- Header -->
     <header
-      class="bg-blue-700 text-white py-5 shadow-lg text-center text-xl font-semibold"
+      class="bg-[#174B6C] text-white py-5 shadow-lg text-xl font-semibold flex justify-between items-center px-6"
     >
-      🎓 Student Information Management System - Dashboard
+      <span>🎓 Student Information Management System - Dashboard</span>
+      <a href="students_logout.php" 
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+        Logout
+      </a>
     </header>
 
     <!-- Search Section -->
-    <section class="bg-white/80 py-6 px-8 shadow-md">
+    <section class="bg-white/90 py-6 px-8 shadow-md">
       <div class="max-w-4xl mx-auto">
         <form method="POST">
-          <label for="search" class="block text-lg font-semibold text-blue-700 mb-2">
+          <label for="search" class="block text-lg font-semibold text-[#174B6C] mb-2">
             🔍 Search Students (by Roll Number)
           </label>
           <div class="relative">
@@ -115,11 +119,11 @@ $conn->close();
               id="search"
               name="search_roll"
               placeholder="Enter roll number..."
-              class="w-full px-5 py-3 rounded-full border border-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-5 py-3 rounded-full border border-[#40A9E0] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2471A3]"
             />
             <button
               type="submit"
-              class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
+              class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#2471A3] text-white px-4 py-2 rounded-full hover:bg-[#174B6C] transition"
             >
               Search
             </button>
@@ -150,8 +154,8 @@ $conn->close();
     >
       <!-- Personal Info -->
       <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-lg">
-        <h3 class="text-lg font-bold text-blue-700 mb-2">📋 View Personal Info</h3>
-        <p class="text-gray-600">
+        <h3 class="text-lg font-bold text-[#174B6C] mb-2">📋 View Personal Info</h3>
+        <p class="text-gray-700">
           <?php if ($student): ?>
             Name: <?= htmlspecialchars($student['first_name'] . ' ' . $student['last_name']) ?><br>
             Roll: <?= htmlspecialchars($student['roll_number']) ?><br>
@@ -164,8 +168,8 @@ $conn->close();
 
       <!-- Academic Info -->
       <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-lg">
-        <h3 class="text-lg font-bold text-blue-700 mb-2">📊 View Academic Info (CGPA)</h3>
-        <p class="text-gray-600">
+        <h3 class="text-lg font-bold text-[#174B6C] mb-2">📊 View Academic Info (CGPA)</h3>
+        <p class="text-gray-700">
           <?php if ($cgpa_info): ?>
             <?php foreach ($cgpa_info as $row): ?>
               <?= htmlspecialchars($row['semester']) ?>: <?= htmlspecialchars($row['cgpa']) ?><br>
@@ -176,8 +180,8 @@ $conn->close();
 
       <!-- Grades -->
       <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-lg">
-        <h3 class="text-lg font-bold text-blue-700 mb-2">📝 View Grades</h3>
-        <p class="text-gray-600">
+        <h3 class="text-lg font-bold text-[#174B6C] mb-2">📝 View Grades</h3>
+        <p class="text-gray-700">
           <?php if ($grades_info): ?>
             <?php foreach ($grades_info as $row): ?>
               <?= htmlspecialchars($row['semester']) ?> - <?= htmlspecialchars($row['course_code']) ?> (<?= htmlspecialchars($row['course_name']) ?>): <?= htmlspecialchars($row['grade']) ?><br>
@@ -188,8 +192,8 @@ $conn->close();
 
       <!-- Attendance -->
       <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-lg">
-        <h3 class="text-lg font-bold text-blue-700 mb-2">📅 View Attendance</h3>
-        <p class="text-gray-600">
+        <h3 class="text-lg font-bold text-[#174B6C] mb-2">📅 View Attendance</h3>
+        <p class="text-gray-700">
           <?php if ($attendance_info): ?>
             <?php foreach ($attendance_info as $row): ?>
               <?= htmlspecialchars($row['course_code']) ?> (<?= htmlspecialchars($row['course_name']) ?>): <?= htmlspecialchars($row['attendance_percentage']) ?>%<br>
@@ -200,23 +204,23 @@ $conn->close();
 
       <!-- Search Students Card -->
       <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-lg">
-        <h3 class="text-lg font-bold text-blue-700 mb-2">🔍 Search Students</h3>
-        <p class="text-gray-600">
+        <h3 class="text-lg font-bold text-[#174B6C] mb-2">🔍 Search Students</h3>
+        <p class="text-gray-700">
           Use the search bar above to find students by roll number.
         </p>
       </div>
 
       <!-- Students by Course/Dept -->
       <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-lg">
-        <h3 class="text-lg font-bold text-blue-700 mb-2">🏫 View Students by Course / Department</h3>
-        <p class="text-gray-600">
+        <h3 class="text-lg font-bold text-[#174B6C] mb-2">🏫 View Students by Course / Department</h3>
+        <p class="text-gray-700">
           Browse student lists by course or department.
         </p>
       </div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-blue-700 text-white text-center py-3 text-sm shadow-inner">
+    <footer class="bg-[#174B6C] text-white text-center py-3 text-sm shadow-inner">
       © 2025 SIMS
     </footer>
   </body>
