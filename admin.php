@@ -330,9 +330,28 @@ if (isset($_POST['enroll_student'])) {
 
 
 // Handle View Courses
+// Fetch all departments for dropdown
+$departments = [];
+$result = $conn->query("SELECT department_name FROM departments ORDER BY department_name");
+if ($result) {
+    $departments = $result->fetch_all(MYSQLI_ASSOC);
+}
+
+// View all courses
 if (isset($_POST['view_courses'])) {
-    $result = $conn->query("SELECT * FROM view_courses");
+    $result = $conn->query("SELECT * FROM view_courses_with_department");
     $data_courses = $result->fetch_all(MYSQLI_ASSOC);
+}
+
+// View courses by department
+if (isset($_POST['view_courses_by_department'])) {
+    $dept_name = $_POST['department_name'];
+    $stmt = $conn->prepare("SELECT * FROM view_courses_with_department WHERE department_name = ?");
+    $stmt->bind_param("s", $dept_name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $data_courses = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 }
 
 // Fetch all departments for dropdown
@@ -768,34 +787,57 @@ if (isset($_POST['search_by_department'])) {
 </section>
     <!-- View Courses -->
     <section id="view-courses" class="section-content">
-      <h2 class="text-2xl font-bold text-blue-700 mb-4">View Courses</h2>
-      <form method="post">
-        <input type="hidden" name="current_section" value="view-courses">
-        <button type="submit" name="view_courses" class="bg-blue-500 text-white px-4 py-2 rounded">Show Courses</button>
-      </form>
-      <?php if ($data_courses): ?>
-        <div class="overflow-x-auto mt-4">
-          <table class="min-w-full border border-gray-300 bg-white">
-            <thead class="bg-gray-200">
-              <tr>
-                <?php foreach(array_keys($data_courses[0]) as $col): ?>
-                  <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
-                <?php endforeach; ?>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach($data_courses as $row): ?>
-                <tr>
-                  <?php foreach ($row as $cell): ?>
-                    <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
-                  <?php endforeach; ?>
-                </tr>
+  <h2 class="text-2xl font-bold text-blue-700 mb-4">View Courses</h2>
+
+  <!-- Show all courses -->
+  <form method="post" class="mb-4">
+    <input type="hidden" name="current_section" value="view-courses">
+    <button type="submit" name="view_courses" class="bg-blue-500 text-white px-4 py-2 rounded">
+      Show All Courses
+    </button>
+  </form>
+
+  <!-- Filter by Department -->
+  <form method="post" class="mb-4 flex gap-2">
+    <input type="hidden" name="current_section" value="view-courses">
+    <select name="department_name" class="p-2 border rounded w-full" required>
+      <option value="">-- Select Department --</option>
+      <?php foreach ($departments as $dept): ?>
+        <option value="<?= htmlspecialchars($dept['department_name']) ?>">
+          <?= htmlspecialchars($dept['department_name']) ?>
+        </option>
+      <?php endforeach; ?>
+    </select>
+    <button type="submit" name="view_courses_by_department" class="bg-green-500 text-white px-4 py-2 rounded">
+      Filter
+    </button>
+  </form>
+
+  <!-- Show results -->
+  <?php if (!empty($data_courses)): ?>
+    <div class="overflow-x-auto mt-4">
+      <table class="min-w-full border border-gray-300 bg-white">
+        <thead class="bg-gray-200">
+          <tr>
+            <?php foreach(array_keys($data_courses[0]) as $col): ?>
+              <th class="border px-4 py-2"><?= htmlspecialchars($col) ?></th>
+            <?php endforeach; ?>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach($data_courses as $row): ?>
+            <tr>
+              <?php foreach ($row as $cell): ?>
+                <td class="border px-4 py-2"><?= htmlspecialchars($cell) ?></td>
               <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
-    </section>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+</section>
+
 <!-- Search Students by Department -->
 <section id="search-department" class="section-content">
   <h2 class="text-2xl font-bold text-blue-700 mb-4">Search Students by Department</h2>
