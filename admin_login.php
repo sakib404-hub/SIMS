@@ -49,11 +49,11 @@ $conn->close();
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body
-    class="bg-gradient-to-br from-blue-50 via-gray-100 to-blue-100 font-sans min-h-screen flex flex-col"
+    class="bg-gradient-to-br from-[#40A9E0] via-[#2471A3] to-[#174B6C] font-sans min-h-screen flex flex-col"
   >
     <!-- Header -->
     <header
-      class="bg-blue-700 text-white py-5 shadow-lg text-center text-xl font-semibold"
+      class="bg-[#174B6C] text-white py-5 shadow-lg text-center text-xl font-semibold"
     >
       🛠️ Student Information Management System - Admin Login
     </header>
@@ -63,7 +63,7 @@ $conn->close();
       <div
         class="container bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-lg max-w-md w-full"
       >
-        <h1 class="text-2xl font-bold text-blue-700 mb-6">Admin Login</h1>
+        <h1 class="text-2xl font-bold text-[#174B6C] mb-6">Admin Login</h1>
 
         <!-- Login Form -->
         <form method="POST" class="space-y-4">
@@ -78,7 +78,7 @@ $conn->close();
               value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>"
               placeholder="username"
               required
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#40A9E0]"
             />
             <?php if (!empty($usernameError)): ?>
               <div class="error-message text-red-500"><?= $usernameError ?></div>
@@ -95,7 +95,7 @@ $conn->close();
               name="password"
               placeholder="password"
               required
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#40A9E0]"
             />
             <?php if (!empty($passwordError)): ?>
               <div class="error-message text-red-500"><?= $passwordError ?></div>
@@ -104,13 +104,13 @@ $conn->close();
 
           <button
             type="submit"
-            class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+            class="w-full bg-[#2471A3] text-white py-2 rounded-lg hover:bg-[#174B6C] transition"
           >
             Login
           </button>
         </form>
 
-        <a href="index.php" class="block mt-4 text-blue-600 hover:underline"
+        <a href="index.php" class="block mt-4 text-[#2471A3] hover:text-[#174B6C] hover:underline"
           >← Back to Home</a
         >
       </div>
@@ -118,7 +118,7 @@ $conn->close();
 
     <!-- Footer -->
     <footer
-      class="bg-blue-700 text-white text-center py-3 text-sm shadow-inner"
+      class="bg-[#174B6C] text-white text-center py-3 text-sm shadow-inner"
     >
       © 2025 SIMS
     </footer>
